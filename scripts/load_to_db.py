@@ -2,24 +2,35 @@ import sys
 import os
 import pandas as pd
 
-# Add the app/ folder to Python's search path so we can import from it
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "app"))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 
-from database import engine, SessionLocal, Base
+sys.path.append(os.path.join(PROJECT_ROOT, "app"))
+
+from database import engine, SessionLocal, Base, db_path
 from models import Transaction
 
-# Create the actual database file and table structure
 Base.metadata.create_all(bind=engine)
 
-df = pd.read_csv("../data/processed/cleaned_transactions.csv", parse_dates=["date"])
-
-print("Loading", len(df), "transactions into the database...")
+csv_path = os.path.join(PROJECT_ROOT, "data", "processed", "cleaned_transactions.csv")
 
 db = SessionLocal()
+
+# Clear existing data before reloading, so this script is safely rerunnable
+existing_count = db.query(Transaction).count()
+if existing_count > 0:
+    print(f"Clearing {existing_count} existing transactions before reload...")
+    db.query(Transaction).delete()
+    db.commit()
+
+df = pd.read_csv(csv_path, parse_dates=["date"])
+
+print("Loading", len(df), "transactions into the database...")
 
 for _, row in df.iterrows():
     transaction = Transaction(
         transaction_id=row["transaction_id"],
+        original_transaction_id=row["original_transaction_id"] if pd.notnull(row["original_transaction_id"]) else None,
         user_id=row["user_id"],
         date=row["date"] if pd.notnull(row["date"]) else None,
         transaction_type=row["transaction_type"],
@@ -36,4 +47,4 @@ for _, row in df.iterrows():
 db.commit()
 db.close()
 
-print("Done. Database created at app/transactions.db")
+print(f"Done. Database created at {db_path}")

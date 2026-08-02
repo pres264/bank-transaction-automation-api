@@ -4,7 +4,8 @@ from database import Base
 
 class Transaction(Base):
     __tablename__ = "transactions"
-
+    
+    original_transaction_id = Column(String, nullable=True, index=True)
     id = Column(Integer, primary_key=True, index=True)
     transaction_id = Column(String, unique=True, index=True)
     user_id = Column(String, index=True)
@@ -18,3 +19,4 @@ class Transaction(Base):
     notes = Column(String, nullable=True)
     notes_suspicious = Column(Boolean, default=False)
     is_anomaly = Column(Boolean, default=False)
+    
