@@ -2,6 +2,40 @@ import pandas as pd
 
 df = pd.read_csv("../data/raw/budgetwise_synthetic_dirty.csv")
 
+print("\nDuplicate transaction_id check:")
+dupe_ids = df[df.duplicated(subset=["transaction_id"], keep=False)]
+print("Total rows involved in duplicates:", len(dupe_ids))
+print("Unique duplicated IDs:", dupe_ids["transaction_id"].nunique())
+print(dupe_ids.sort_values("transaction_id").head(10))
+
+
+# Step 1: Remove TRUE duplicates - identical across every column, likely accidental double-export
+before_dedup = len(df)
+df = df.drop_duplicates(subset=[c for c in df.columns if c != "transaction_id"] + ["transaction_id"])
+print(f"\nRemoved {before_dedup - len(df)} true duplicate rows (identical in every column)")
+
+# Step 2: Handle remaining transaction_id collisions - same ID, genuinely different transactions
+remaining_dupes = df[df.duplicated(subset=["transaction_id"], keep=False)]
+print("Remaining ID collisions (different transactions sharing an ID):", remaining_dupes["transaction_id"].nunique())
+
+# Make these IDs unique again by appending a suffix, while preserving the
+# original ID in a separate column for audit purposes - we never silently
+# lose information, we just make it queryable
+# Make these IDs unique again by appending a suffix, while preserving the
+# original ID in a separate column for audit purposes - we never silently
+# lose information, we just make it queryable
+df["original_transaction_id"] = df["transaction_id"]
+
+dupe_mask = df.duplicated(subset=["transaction_id"], keep=False)
+occurrence_number = df.groupby("transaction_id").cumcount() + 1
+
+df.loc[dupe_mask, "transaction_id"] = (
+    df.loc[dupe_mask, "transaction_id"] + "-" + occurrence_number[dupe_mask].astype(str)
+)
+
+print("Final unique transaction_id count:", df["transaction_id"].nunique())
+print("Final row count:", len(df))
+
 print("Original shape:", df.shape)
 print("Missing dates:", df["date"].isnull().sum())
 
