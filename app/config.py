@@ -6,9 +6,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
 
-print("Looking for .env at:", ENV_PATH)
-print("File exists:", os.path.exists(ENV_PATH))
-
 
 class Settings(BaseSettings):
     api_key: str
