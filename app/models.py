@@ -19,4 +19,6 @@ class Transaction(Base):
     notes = Column(String, nullable=True)
     notes_suspicious = Column(Boolean, default=False)
     is_anomaly = Column(Boolean, default=False)
-    
+    amount = Column(Float, nullable=True)
+    currency = Column(String, nullable=True)
+    data_complete = Column(Boolean, default=True)

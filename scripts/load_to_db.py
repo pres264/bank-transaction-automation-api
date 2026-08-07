@@ -41,6 +41,7 @@ for _, row in df.iterrows():
         location=row["location"] if pd.notnull(row["location"]) else None,
         notes=row["notes"] if pd.notnull(row["notes"]) else None,
         notes_suspicious=bool(row["notes_suspicious"]),
+        data_complete=bool(row["data_complete"]),
     )
     db.add(transaction)
 

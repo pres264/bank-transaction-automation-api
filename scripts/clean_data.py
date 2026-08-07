@@ -194,6 +194,17 @@ df["notes_suspicious"] = df["notes"].apply(
 )
 print("\nSuspicious notes flagged:", df["notes_suspicious"].sum())
 
+# Sensible defaults for missing categorical fields - doesn't distort financial data
+df["category"] = df["category"].fillna("Uncategorized")
+df["payment_mode"] = df["payment_mode"].fillna("Unknown")
+
+# Amount/currency are financially critical - never fabricate a value.
+# Instead, flag the record so it's visible and auditable rather than silently
+# dropped or defaulted to 0 (which would corrupt any spending totals).
+df["data_complete"] = df["amount"].notnull() & df["currency"].notnull()
+
+print("\nIncomplete records (missing amount/currency):", (~df["data_complete"]).sum())
+
 df.to_csv("../data/processed/cleaned_transactions.csv", index=False)
 print("\nFinal shape:", df.shape)
 print("Saved to data/processed/cleaned_transactions.csv")    
