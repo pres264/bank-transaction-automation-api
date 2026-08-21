@@ -48,3 +48,42 @@ def get_transactions(
 
     transactions = query.offset(skip).limit(min(limit, 500)).all()
     return transactions
+
+
+from sqlalchemy import func
+
+@app.get("/transactions/summary")
+def get_summary(
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_api_key),
+    user_id: Optional[str] = None,
+):
+    query = db.query(
+        Transaction.category,
+        Transaction.currency,
+        Transaction.transaction_type,
+        func.count(Transaction.id).label("count"),
+        func.sum(Transaction.amount).label("total_amount"),
+        func.avg(Transaction.amount).label("average_amount"),
+    ).filter(Transaction.data_complete == True)
+
+    if user_id:
+        query = query.filter(Transaction.user_id == user_id)
+
+    results = query.group_by(
+        Transaction.category, Transaction.currency, Transaction.transaction_type
+    ).all()
+
+    summary = [
+        {
+            "category": r.category,
+            "currency": r.currency,
+            "transaction_type": r.transaction_type,
+            "count": r.count,
+            "total_amount": round(r.total_amount, 2),
+            "average_amount": round(r.average_amount, 2),
+        }
+        for r in results
+    ]
+
+    return {"user_id": user_id, "summary": summary}
