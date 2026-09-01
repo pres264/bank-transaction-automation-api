@@ -87,3 +87,16 @@ def get_summary(
     ]
 
     return {"user_id": user_id, "summary": summary}
+
+@app.get("/transactions/anomalies", response_model=List[TransactionResponse])
+def get_anomalies(
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_api_key),
+    user_id: Optional[str] = None,
+):
+    query = db.query(Transaction).filter(Transaction.is_anomaly == True)
+
+    if user_id:
+        query = query.filter(Transaction.user_id == user_id)
+
+    return query.all()
